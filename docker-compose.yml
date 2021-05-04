@@ -1,0 +1,50 @@
+version: '3.9'
+services:
+    pfa-golang:
+        image: vitorag/pfa-golang   
+        container_name: pfa-golang   
+        restart: always
+        networks: 
+            - nginx-app
+            - mysql-app
+        expose: 
+            - 3000
+        depends_on: 
+            - pfa-mysql
+        command: sh -c "dockerize -wait tcp://pfa-mysql:3306 -timeout 300s -wait-retry-interval 30s /app/application"
+    pfa-mysql:
+        image: mysql:5.7
+        container_name: pfa-mysql
+        restart: always
+        expose:
+            - 3306
+        volumes:
+            - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+            - ./dbdata:/var/lib/mysql
+        environment: 
+            - MYSQL_ROOT_PASSWORD=password
+        networks: 
+            - mysql-app
+    pfa-nginx:
+        image: nginx
+        container_name: pfa-nginx
+        restart: always
+        volumes: 
+            - ./default.conf:/etc/nginx/conf.d/default.conf
+        ports:
+            - 8000:80
+        expose:
+            - 80
+        networks: 
+            - nginx-app
+
+volumes:
+    dbdata:
+
+networks: 
+    nginx-app:
+        name: nginx-app
+        driver: bridge
+    mysql-app:
+        name: mysql-app
+        driver: bridge
